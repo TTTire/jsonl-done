@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSONL 文件处理器</title>
+    <title>JSONL 模块化处理器</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Ctext x='12' y='18' font-family='Arial, sans-serif' font-size='20' font-weight='bold' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E" type="image/svg+xml">
     <style>
         body {
@@ -17,7 +17,7 @@
             align-items: center;
             position: relative;
         }
-        
+
         .left-label, .right-label {
             position: fixed;
             top: 50%;
@@ -33,23 +33,23 @@
             animation: float 3s ease-in-out infinite;
             transition: all 0.3s ease;
         }
-        
+
         .left-label {
             left: 60px;
             animation-delay: 0s;
         }
-        
+
         .right-label {
             right: 60px;
             animation-delay: 1.5s;
         }
-        
+
         .left-label:hover, .right-label:hover {
             transform: translateY(-50%) scale(1.1);
             color: rgba(255, 255, 255, 1);
             text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8);
         }
-        
+
         @keyframes float {
             0%, 100% {
                 transform: translateY(-50%) translateX(0px);
@@ -58,25 +58,60 @@
                 transform: translateY(-50%) translateX(10px);
             }
         }
+
         .container {
             background: white;
             padding: 40px;
             border-radius: 15px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             text-align: center;
         }
+
         h1 {
             color: #333;
             margin-bottom: 30px;
             font-size: 2.5em;
             font-weight: 300;
         }
+
         .input-group {
             margin-bottom: 25px;
             text-align: left;
         }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            background: #fafbfc;
+        }
+
+        .section-title {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
         label {
             display: block;
             margin-bottom: 8px;
@@ -84,6 +119,7 @@
             font-weight: 500;
             font-size: 14px;
         }
+
         input[type="file"], input[type="text"], input[type="number"], input[type="date"] {
             width: 100%;
             padding: 12px 15px;
@@ -93,18 +129,86 @@
             transition: all 0.3s ease;
             box-sizing: border-box;
         }
+
         input[type="file"] {
             background: #f8f9fa;
             cursor: pointer;
         }
+
         input[type="file"]:hover {
             background: #e9ecef;
         }
+
         input[type="text"]:focus, input[type="number"]:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .checkbox-item:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .checkbox-item.checked {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 12px;
+            margin-top: 2px;
+            transform: scale(1.2);
+        }
+
+        .checkbox-content {
+            flex: 1;
+        }
+
+        .checkbox-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .checkbox-description {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .checkbox-dependency {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            border-left: 3px solid #667eea;
+        }
+
+        .checkbox-dependency label {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
         button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -118,16 +222,19 @@
             width: 100%;
             margin-top: 10px;
         }
+
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
+
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
+
         #statusArea {
             margin-top: 25px;
             padding: 15px;
@@ -137,21 +244,25 @@
             font-size: 14px;
             line-height: 1.5;
         }
+
         .status-info {
             background: #e3f2fd;
             border: 1px solid #2196f3;
             color: #1976d2;
         }
+
         .status-success {
             background: #e8f5e8;
             border: 1px solid #4caf50;
             color: #2e7d32;
         }
+
         .status-error {
             background: #ffebee;
             border: 1px solid #f44336;
             color: #c62828;
         }
+
         .file-info {
             background: #f8f9fa;
             padding: 15px;
@@ -159,63 +270,177 @@
             margin: 15px 0;
             border-left: 4px solid #667eea;
         }
+
+        .selected-functions {
+            background: #e8f5e8;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 3px solid #4caf50;
+        }
+
+        .selected-functions-title {
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 8px;
+        }
+
+        .selected-function-item {
+            font-size: 13px;
+            color: #388e3c;
+            padding: 2px 0;
+        }
     </style>
 </head>
     <body>
         <div class="left-label">轻松处理JSONL</div>
         <div class="right-label">无缝对接狂标</div>
         <div class="container">
-        <h1>JSONL 文件处理器</h1>
-        
-        <div class="input-group">
-            <label for="fileInput">选择 JSONL 文件：</label>
-            <input type="file" id="fileInput" accept=".jsonl" />
+            <h1>JSONL 模块化处理器</h1>
+
+            <!-- 文件选择区域 -->
+            <div class="section">
+                <div class="section-title">
+                    <div class="section-icon">1</div>
+                    文件选择
+                </div>
+                <div class="input-group">
+                    <label for="fileInput">选择 JSONL 文件：</label>
+                    <input type="file" id="fileInput" accept=".jsonl" />
+                </div>
+            </div>
+
+            <!-- 功能选择区域 -->
+            <div class="section">
+                <div class="section-title">
+                    <div class="section-icon">2</div>
+                    功能选择
+                </div>
+
+                <div class="checkbox-group">
+                    <!-- 日期插入功能 -->
+                    <div class="checkbox-item" data-function="dateInsert">
+                        <input type="checkbox" id="dateInsert" checked>
+                        <div class="checkbox-content">
+                            <div class="checkbox-title">日期插入</div>
+                            <div class="checkbox-description">在 internal_id 字段最后一个下划线前插入用户选择的日期</div>
+                        </div>
+                    </div>
+                    <div class="checkbox-dependency" id="dateInsertSettings">
+                        <label for="dateInput">选择插入日期：</label>
+                        <input type="date" id="dateInput" />
+                    </div>
+
+                    <!-- Prompt截断功能 -->
+                    <div class="checkbox-item" data-function="promptTruncate">
+                        <input type="checkbox" id="promptTruncate" checked>
+                        <div class="checkbox-content">
+                            <div class="checkbox-title">Prompt截断</div>
+                            <div class="checkbox-description">将 prompt 字段截断为指定字符数</div>
+                        </div>
+                    </div>
+                    <div class="checkbox-dependency" id="promptTruncateSettings">
+                        <label for="truncateLengthInput">截断长度（字符数）：</label>
+                        <input type="number" id="truncateLengthInput" value="10" min="1" max="1000" />
+                    </div>
+
+                    <!-- Reference字段添加功能 -->
+                    <div class="checkbox-item" data-function="referenceField">
+                        <input type="checkbox" id="referenceField" checked>
+                        <div class="checkbox-content">
+                            <div class="checkbox-title">Reference字段添加</div>
+                            <div class="checkbox-description">将完整的 prompt 内容保存到 reference 字段</div>
+                        </div>
+                    </div>
+
+                    <!-- 文件切分功能 -->
+                    <div class="checkbox-item" data-function="fileSplit">
+                        <input type="checkbox" id="fileSplit" checked>
+                        <div class="checkbox-content">
+                            <div class="checkbox-title">文件切分</div>
+                            <div class="checkbox-description">按指定行数将处理后的数据切分成多个文件</div>
+                        </div>
+                    </div>
+                    <div class="checkbox-dependency" id="fileSplitSettings">
+                        <label for="splitCountInput">每份文件的行数：</label>
+                        <input type="number" id="splitCountInput" placeholder="每份文件的行数..." min="1" value="100" />
+                    </div>
+
+                    <!-- 批量下载功能 -->
+                    <div class="checkbox-item" data-function="batchDownload">
+                        <input type="checkbox" id="batchDownload" checked>
+                        <div class="checkbox-content">
+                            <div class="checkbox-title">批量下载</div>
+                            <div class="checkbox-description">自动下载所有生成的文件（此功能在文件切分启用时自动启用）</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 已选择功能显示 -->
+                <div class="selected-functions" id="selectedFunctions" style="display: none;">
+                    <div class="selected-functions-title">已选择的功能：</div>
+                    <div id="selectedFunctionsList"></div>
+                </div>
+            </div>
+
+            <button id="processButton">处理并下载</button>
+
+            <div id="statusArea"></div>
         </div>
-
-        <div class="input-group">
-            <label for="dateInput">当前日期：</label>
-            <input type="date" id="dateInput" />
-        </div>
-
-        <div class="input-group">
-            <label for="splitCountInput">每份文件的行数：</label>
-            <input type="number" id="splitCountInput" placeholder="每份文件的行数..." min="1" />
-        </div>
-
-        <button id="processButton">处理并下载</button>
-
-        <div id="statusArea"></div>
-    </div>
 
     <script>
+        // 获取DOM元素
         const fileInput = document.getElementById('fileInput');
         const dateInput = document.getElementById('dateInput');
+        const truncateLengthInput = document.getElementById('truncateLengthInput');
         const splitCountInput = document.getElementById('splitCountInput');
         const processButton = document.getElementById('processButton');
         const statusArea = document.getElementById('statusArea');
+        const selectedFunctions = document.getElementById('selectedFunctions');
+        const selectedFunctionsList = document.getElementById('selectedFunctionsList');
 
+        // 功能配置
+        const functionConfig = {
+            dateInsert: {
+                name: '日期插入',
+                description: '在 internal_id 字段插入日期',
+                dependencies: ['dateInput']
+            },
+            promptTruncate: {
+                name: 'Prompt截断',
+                description: '截断 prompt 字段',
+                dependencies: ['truncateLengthInput']
+            },
+            referenceField: {
+                name: 'Reference字段添加',
+                description: '添加 reference 字段',
+                dependencies: []
+            },
+            fileSplit: {
+                name: '文件切分',
+                description: '切分文件',
+                dependencies: ['splitCountInput']
+            },
+            batchDownload: {
+                name: '批量下载',
+                description: '批量下载文件',
+                dependencies: []
+            }
+        };
+
+        // 状态管理
         function showStatus(message, type = 'info') {
             statusArea.className = `status-${type}`;
             statusArea.innerHTML = message;
         }
 
+        // 工具函数
         function formatDate(dateString) {
             const date = new Date(dateString);
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}${month}${day}`;
-        }
-
-        function generateUUID() {
-            if (crypto.randomUUID) {
-                return crypto.randomUUID();
-            }
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0;
-                const v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
         }
 
         function downloadFile(content, fileName) {
@@ -238,6 +463,151 @@
             return chunks;
         }
 
+        // 功能模块
+        const functionModules = {
+            dateInsert: function(obj, options) {
+                const originalInternalId = obj['internal_id'] || 'unknown';
+                const currentDate = options.currentDate;
+
+                let newInternalId;
+                if (originalInternalId !== 'unknown') {
+                    const lastUnderscoreIndex = originalInternalId.lastIndexOf('_');
+                    if (lastUnderscoreIndex !== -1) {
+                        const beforeLastUnderscore = originalInternalId.substring(0, lastUnderscoreIndex);
+                        const afterLastUnderscore = originalInternalId.substring(lastUnderscoreIndex);
+                        newInternalId = `${beforeLastUnderscore}_${currentDate}${afterLastUnderscore}`;
+                    } else {
+                        newInternalId = `${originalInternalId}_${currentDate}`;
+                    }
+                } else {
+                    newInternalId = `unknown_${currentDate}`;
+                }
+
+                return { ...obj, 'internal_id': newInternalId };
+            },
+
+            promptTruncate: function(obj, options) {
+                const truncateLength = options.truncateLength || 10;
+                const newObj = { ...obj };
+
+                if (obj.prompt) {
+                    newObj.prompt = obj.prompt.substring(0, truncateLength);
+                }
+
+                return newObj;
+            },
+
+            referenceField: function(obj, options) {
+                const newObj = { ...obj };
+
+                if (obj.prompt) {
+                    newObj.reference = obj.prompt;
+                } else {
+                    newObj.reference = '';
+                }
+
+                return newObj;
+            },
+
+            fileSplit: function(processedObjects, options) {
+                const splitCount = options.splitCount || 100;
+                return chunkArray(processedObjects, splitCount);
+            },
+
+            batchDownload: function(chunks, options) {
+                const file = options.file;
+                const totalFiles = chunks.length;
+
+                chunks.forEach((chunk, index) => {
+                    const originalFileName = file.name.replace('.jsonl', '');
+                    const fileName = options.splitEnabled ?
+                        `${originalFileName}_part_${index + 1}.jsonl` :
+                        `${originalFileName}_processed.jsonl`;
+
+                    const jsonlContent = chunk.map(obj => JSON.stringify(obj)).join('\n');
+
+                    setTimeout(() => {
+                        downloadFile(jsonlContent, fileName);
+                        showStatus(`正在下载第 ${index + 1}/${totalFiles} 个文件: ${fileName}`, 'info');
+                    }, index * 100);
+                });
+            }
+        };
+
+        // 获取选中的功能
+        function getSelectedFunctions() {
+            const selected = [];
+            const checkboxes = document.querySelectorAll('.checkbox-item input[type="checkbox"]');
+
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const functionName = checkbox.id;
+                    selected.push(functionName);
+                }
+            });
+
+            return selected;
+        }
+
+        // 更新已选择功能显示
+        function updateSelectedFunctionsDisplay() {
+            const selected = getSelectedFunctions();
+
+            if (selected.length === 0) {
+                selectedFunctions.style.display = 'none';
+                return;
+            }
+
+            selectedFunctions.style.display = 'block';
+            const selectedHtml = selected.map(func =>
+                `<div class="selected-function-item">• ${functionConfig[func].name}</div>`
+            ).join('');
+
+            selectedFunctionsList.innerHTML = selectedHtml;
+        }
+
+        // 显示/隐藏依赖设置
+        function toggleDependencySettings(functionName, show) {
+            const config = functionConfig[functionName];
+            if (!config) return;
+
+            config.dependencies.forEach(depId => {
+                const element = document.getElementById(`${functionName}Settings`);
+                if (element) {
+                    element.style.display = show ? 'block' : 'none';
+                }
+            });
+        }
+
+        // 更新checkbox样式
+        function updateCheckboxStyle(checkbox) {
+            const parent = checkbox.closest('.checkbox-item');
+            if (checkbox.checked) {
+                parent.classList.add('checked');
+            } else {
+                parent.classList.remove('checked');
+            }
+        }
+
+        // 处理功能依赖关系
+        function handleFunctionDependencies() {
+            const fileSplitEnabled = document.getElementById('fileSplit').checked;
+            const batchDownloadCheckbox = document.getElementById('batchDownload');
+
+            // 如果文件切分启用，批量下载自动启用且不可取消
+            if (fileSplitEnabled) {
+                batchDownloadCheckbox.checked = true;
+                batchDownloadCheckbox.disabled = true;
+                batchDownloadCheckbox.closest('.checkbox-item').style.opacity = '0.6';
+                batchDownloadCheckbox.closest('.checkbox-item').style.cursor = 'not-allowed';
+            } else {
+                batchDownloadCheckbox.disabled = false;
+                batchDownloadCheckbox.closest('.checkbox-item').style.opacity = '1';
+                batchDownloadCheckbox.closest('.checkbox-item').style.cursor = 'pointer';
+            }
+        }
+
+        // 主处理函数
         async function processFile() {
             try {
                 const file = fileInput.files[0];
@@ -246,15 +616,25 @@
                     return;
                 }
 
-                const userDate = dateInput.value;
-                if (!userDate) {
-                    showStatus('请选择日期', 'error');
+                const selectedFunctions = getSelectedFunctions();
+                if (selectedFunctions.length === 0) {
+                    showStatus('请至少选择一个功能', 'error');
                     return;
                 }
 
-                const splitCount = parseInt(splitCountInput.value);
-                if (!splitCount || splitCount < 1) {
-                    showStatus('请输入有效的切分行数（必须大于0）', 'error');
+                // 验证必要的输入
+                if (selectedFunctions.includes('dateInsert') && !dateInput.value) {
+                    showStatus('请选择插入日期', 'error');
+                    return;
+                }
+
+                if (selectedFunctions.includes('promptTruncate') && (!truncateLengthInput.value || truncateLengthInput.value < 1)) {
+                    showStatus('请输入有效的截断长度', 'error');
+                    return;
+                }
+
+                if (selectedFunctions.includes('fileSplit') && (!splitCountInput.value || splitCountInput.value < 1)) {
+                    showStatus('请输入有效的切分行数', 'error');
                     return;
                 }
 
@@ -263,6 +643,7 @@
 
                 showStatus('正在读取文件...', 'info');
 
+                // 读取文件
                 const fileContent = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = (e) => resolve(e.target.result);
@@ -272,9 +653,10 @@
 
                 showStatus('正在解析文件内容...', 'info');
 
+                // 解析JSONL
                 const lines = fileContent.split('\n').filter(line => line.trim());
                 const jsonObjects = [];
-                
+
                 for (let i = 0; i < lines.length; i++) {
                     try {
                         const obj = JSON.parse(lines[i]);
@@ -287,85 +669,56 @@
 
                 showStatus(`成功解析 ${jsonObjects.length} 行数据，正在处理...`, 'info');
 
-                const currentDate = formatDate(userDate);
+                // 准备处理选项
+                const options = {
+                    currentDate: selectedFunctions.includes('dateInsert') ? formatDate(dateInput.value) : null,
+                    truncateLength: selectedFunctions.includes('promptTruncate') ? parseInt(truncateLengthInput.value) : null,
+                    splitCount: selectedFunctions.includes('fileSplit') ? parseInt(splitCountInput.value) : null,
+                    splitEnabled: selectedFunctions.includes('fileSplit'),
+                    file: file
+                };
 
-                const processedObjects = jsonObjects.map(obj => {
-                    // 在最后一个下划线前面插入用户选择的日期
-                    const originalInternalId = obj['internal_id'] || 'unknown';
-                    
-                    let newInternalId;
-                    if (originalInternalId !== 'unknown') {
-                        // 找到最后一个下划线的位置
-                        const lastUnderscoreIndex = originalInternalId.lastIndexOf('_');
-                        
-                        if (lastUnderscoreIndex !== -1) {
-                            // 在最后一个下划线前面插入日期
-                            const beforeLastUnderscore = originalInternalId.substring(0, lastUnderscoreIndex);
-                            const afterLastUnderscore = originalInternalId.substring(lastUnderscoreIndex);
-                            newInternalId = `${beforeLastUnderscore}_${currentDate}${afterLastUnderscore}`;
-                        } else {
-                            // 没有下划线，直接在末尾添加日期
-                            newInternalId = `${originalInternalId}_${currentDate}`;
-                        }
-                    } else {
-                        // 如果原始internal_id是unknown，直接使用新日期
-                        newInternalId = `unknown_${currentDate}`;
-                    }
-                    
-                    const newObj = { ...obj };
-                    newObj['internal_id'] = newInternalId;
-                    
-                    // 添加reference字段，包含prompt的全部内容
-                    if (obj.prompt) {
-                        newObj.reference = obj.prompt;
-                    } else {
-                        newObj.reference = '';
-                    }
-                    
-                    // 截断prompt字段，只保留前10个字符
-                    if (obj.prompt) {
-                        newObj.prompt = obj.prompt.substring(0, 10);
-                    }
-                    
-                    return newObj;
-                });
+                // 应用选中的功能
+                let processedObjects = [...jsonObjects];
 
-                showStatus('数据处理完成，正在切分文件...', 'info');
-
-                const chunks = chunkArray(processedObjects, splitCount);
-                const totalFiles = chunks.length;
-
-                showStatus(`文件切分完成，共 ${totalFiles} 个文件，正在准备下载...`, 'info');
-
-                for (let i = 0; i < chunks.length; i++) {
-                    const chunk = chunks[i];
-                    // 使用原始文件名作为基础，格式为：{原始文件名}_part_{序号}.jsonl
-                    const originalFileName = file.name.replace('.jsonl', '');
-                    const fileName = `${originalFileName}_part_${i + 1}.jsonl`;
-                    
-                    const jsonlContent = chunk.map(obj => JSON.stringify(obj)).join('\n');
-                    
-                    downloadFile(jsonlContent, fileName);
-                    
-                    showStatus(`正在下载第 ${i + 1}/${totalFiles} 个文件: ${fileName}`, 'info');
-                    
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                if (selectedFunctions.includes('dateInsert')) {
+                    showStatus('正在插入日期...', 'info');
+                    processedObjects = processedObjects.map(obj => functionModules.dateInsert(obj, options));
                 }
 
-                showStatus(`处理完成！成功生成并下载了 ${totalFiles} 个文件。`, 'success');
-                
-                const fileInfo = `
-                    <div class="file-info">
-                        <strong>处理摘要：</strong><br>
-                        • 原始文件：${file.name}<br>
-                        • 总行数：${jsonObjects.length}<br>
-                        • 切分数量：${splitCount} 行/文件<br>
-                        • 生成文件：${totalFiles} 个<br>
-                        • 处理日期：${currentDate}<br>
-                        • 处理说明：每行internal_id已在最后一个下划线前插入{用户选择日期}，prompt字段截断为前10字符，reference字段保存prompt的完整内容
-                    </div>
-                `;
-                statusArea.innerHTML += fileInfo;
+                if (selectedFunctions.includes('referenceField')) {
+                    showStatus('正在添加reference字段...', 'info');
+                    processedObjects = processedObjects.map(obj => functionModules.referenceField(obj, options));
+                }
+
+                if (selectedFunctions.includes('promptTruncate')) {
+                    showStatus('正在截断prompt字段...', 'info');
+                    processedObjects = processedObjects.map(obj => functionModules.promptTruncate(obj, options));
+                }
+
+                // 处理文件切分
+                let chunks;
+                if (selectedFunctions.includes('fileSplit')) {
+                    showStatus('正在切分文件...', 'info');
+                    chunks = functionModules.fileSplit(processedObjects, options);
+                } else {
+                    chunks = [processedObjects];
+                }
+
+                showStatus('数据处理完成，正在准备下载...', 'info');
+
+                // 批量下载
+                if (selectedFunctions.includes('batchDownload')) {
+                    functionModules.batchDownload(chunks, options);
+
+                    setTimeout(() => {
+                        showStatus(`处理完成！成功生成并下载了 ${chunks.length} 个文件。`, 'success');
+                        generateFileInfo(file, jsonObjects.length, selectedFunctions, chunks.length, options);
+                    }, chunks.length * 100 + 500);
+                } else {
+                    showStatus('处理完成！未启用下载功能。', 'success');
+                    generateFileInfo(file, jsonObjects.length, selectedFunctions, chunks.length, options);
+                }
 
             } catch (error) {
                 showStatus(`处理过程中发生错误: ${error.message}`, 'error');
@@ -376,6 +729,32 @@
             }
         }
 
+        // 生成处理信息
+        function generateFileInfo(file, totalLines, selectedFunctions, totalFiles, options) {
+            const functionDescriptions = selectedFunctions.map(func => {
+                const config = functionConfig[func];
+                let desc = `• ${config.name}: ${config.description}`;
+
+                if (func === 'dateInsert') desc += ` (插入日期: ${options.currentDate})`;
+                if (func === 'promptTruncate') desc += ` (截断长度: ${options.truncateLength}字符)`;
+                if (func === 'fileSplit') desc += ` (每份文件: ${options.splitCount}行)`;
+
+                return desc;
+            }).join('<br>');
+
+            const fileInfo = `
+                <div class="file-info">
+                    <strong>处理摘要：</strong><br>
+                    • 原始文件：${file.name}<br>
+                    • 总行数：${totalLines}<br>
+                    • 生成文件：${totalFiles} 个<br>
+                    • 启用功能：<br>${functionDescriptions}
+                </div>
+            `;
+            statusArea.innerHTML += fileInfo;
+        }
+
+        // 事件监听器
         processButton.addEventListener('click', processFile);
 
         fileInput.addEventListener('change', (e) => {
@@ -385,12 +764,38 @@
             }
         });
 
+        // 功能选择事件监听
+        document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const functionName = e.target.id;
+                const isChecked = e.target.checked;
+
+                updateCheckboxStyle(e.target);
+                toggleDependencySettings(functionName, isChecked);
+                updateSelectedFunctionsDisplay();
+                handleFunctionDependencies();
+            });
+        });
+
+        // 初始化
         document.addEventListener('DOMContentLoaded', () => {
-            // 设置默认日期为今天
+            // 设置默认日期
             const today = new Date().toISOString().split('T')[0];
             dateInput.value = today;
-            
-            showStatus('请选择JSONL文件，选择日期，设置切分行数，然后点击"处理并下载"按钮。', 'info');
+
+            // 初始化复选框状态
+            document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(checkbox => {
+                updateCheckboxStyle(checkbox);
+                toggleDependencySettings(checkbox.id, checkbox.checked);
+            });
+
+            // 处理依赖关系
+            handleFunctionDependencies();
+
+            // 更新功能显示
+            updateSelectedFunctionsDisplay();
+
+            showStatus('请选择JSONL文件，选择需要的功能，然后点击"处理并下载"按钮。', 'info');
         });
     </script>
 </body>
