@@ -405,6 +405,28 @@
                             <div class="checkbox-description">自动下载所有生成的文件（此功能在文件切分启用时自动启用）</div>
                         </div>
                     </div>
+
+                    <!-- 数据行大小过滤功能 -->
+                    <div class="checkbox-item" data-function="rowSizeFilter">
+                        <input type="checkbox" id="rowSizeFilter">
+                        <div class="checkbox-content">
+                            <div class="checkbox-title">数据行大小过滤</div>
+                            <div class="checkbox-description">过滤掉超过指定大小（MB）的数据行，输出保留和过滤两个文件</div>
+                        </div>
+                    </div>
+                    <div class="checkbox-dependency" id="rowSizeFilterSettings" style="display: none;">
+                        <label for="maxRowSizeInput">大小阈值（MB）：</label>
+                        <input type="number" id="maxRowSizeInput" value="1" min="0.001" step="0.001" />
+                    </div>
+
+                    <!-- Prompt 长度过滤功能 -->
+                    <div class="checkbox-item" data-function="promptLengthFilter">
+                        <input type="checkbox" id="promptLengthFilter">
+                        <div class="checkbox-content">
+                            <div class="checkbox-title">Prompt 长度过滤</div>
+                            <div class="checkbox-description">过滤掉 prompt 字段超过 20480 字节的数据行，输出保留和过滤两个文件</div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 已选择功能显示 -->
@@ -456,6 +478,16 @@
                 name: '批量下载',
                 description: '批量下载文件',
                 dependencies: []
+            },
+            rowSizeFilter: {
+                name: '数据行大小过滤',
+                description: '按数据行大小过滤',
+                dependencies: ['maxRowSizeInput']
+            },
+            promptLengthFilter: {
+                name: 'Prompt 长度过滤',
+                description: '按 prompt 长度过滤（固定 20480 字节）',
+                dependencies: []
             }
         };
 
@@ -492,6 +524,11 @@
                 chunks.push(array.slice(i, i + chunkSize));
             }
             return chunks;
+        }
+
+        // UTF-8 字节长度计算函数
+        function utf8ByteLength(str) {
+            return new TextEncoder().encode(str).length;
         }
 
         // 功能模块
@@ -547,8 +584,33 @@
 
             batchDownload: function(chunks, options) {
                 const file = options.file;
-                const totalFiles = chunks.length;
 
+                // 处理双文件模式（过滤功能）
+                if (options.isFilterResult) {
+                    const { retained, filtered } = chunks;
+                    const originalFileName = file.name.replace('.jsonl', '');
+
+                    if (retained.length > 0) {
+                        const retainedContent = retained.map(obj => JSON.stringify(obj)).join('\n');
+                        setTimeout(() => {
+                            downloadFile(retainedContent, `${originalFileName}_retained.jsonl`);
+                            showStatus(`正在下载保留文件: ${originalFileName}_retained.jsonl (${retained.length} 行)`, 'info');
+                        }, 0);
+                    }
+
+                    if (filtered.length > 0) {
+                        const filteredContent = filtered.map(obj => JSON.stringify(obj)).join('\n');
+                        setTimeout(() => {
+                            downloadFile(filteredContent, `${originalFileName}_filtered.jsonl`);
+                            showStatus(`正在下载过滤文件: ${originalFileName}_filtered.jsonl (${filtered.length} 行)`, 'info');
+                        }, 100);
+                    }
+
+                    return;
+                }
+
+                // 原有的单文件/多文件下载逻辑
+                const totalFiles = chunks.length;
                 chunks.forEach((chunk, index) => {
                     const originalFileName = file.name.replace('.jsonl', '');
                     const fileName = options.splitEnabled ?
@@ -562,6 +624,45 @@
                         showStatus(`正在下载第 ${index + 1}/${totalFiles} 个文件: ${fileName}`, 'info');
                     }, index * 100);
                 });
+            },
+
+            // 数据行大小过滤功能
+            rowSizeFilter: function(objects, options) {
+                const maxSizeBytes = options.maxRowSize * 1024 * 1024;
+                const retained = [];
+                const filtered = [];
+
+                objects.forEach(obj => {
+                    const jsonString = JSON.stringify(obj);
+                    const byteSize = utf8ByteLength(jsonString);
+
+                    if (byteSize > maxSizeBytes) {
+                        filtered.push(obj);
+                    } else {
+                        retained.push(obj);
+                    }
+                });
+
+                return { retained, filtered };
+            },
+
+            // Prompt 长度过滤功能
+            promptLengthFilter: function(objects, options) {
+                const maxLength = options.maxPromptLength;
+                const retained = [];
+                const filtered = [];
+
+                objects.forEach(obj => {
+                    const promptLength = obj.prompt ? utf8ByteLength(obj.prompt) : 0;
+
+                    if (promptLength > maxLength) {
+                        filtered.push(obj);
+                    } else {
+                        retained.push(obj);
+                    }
+                });
+
+                return { retained, filtered };
             }
         };
 
@@ -622,11 +723,22 @@
 
         // 处理功能依赖关系
         function handleFunctionDependencies() {
+            const rowSizeFilterEnabled = document.getElementById('rowSizeFilter').checked;
+            const promptLengthFilterEnabled = document.getElementById('promptLengthFilter').checked;
             const fileSplitEnabled = document.getElementById('fileSplit').checked;
             const batchDownloadCheckbox = document.getElementById('batchDownload');
 
+            // 检测是否启用了过滤功能
+            const hasFilterFunction = rowSizeFilterEnabled || promptLengthFilterEnabled;
+
             // 如果文件切分启用，批量下载自动启用且不可取消
             if (fileSplitEnabled) {
+                batchDownloadCheckbox.checked = true;
+                batchDownloadCheckbox.disabled = true;
+                batchDownloadCheckbox.closest('.checkbox-item').style.opacity = '0.6';
+                batchDownloadCheckbox.closest('.checkbox-item').style.cursor = 'not-allowed';
+            } else if (hasFilterFunction) {
+                // 过滤功能启用时，批量下载自动启用且不可取消
                 batchDownloadCheckbox.checked = true;
                 batchDownloadCheckbox.disabled = true;
                 batchDownloadCheckbox.closest('.checkbox-item').style.opacity = '0.6';
@@ -669,6 +781,11 @@
                     return;
                 }
 
+                if (selectedFunctions.includes('rowSizeFilter') && (!document.getElementById('maxRowSizeInput').value || document.getElementById('maxRowSizeInput').value < 0.001)) {
+                    showStatus('请输入有效的大小阈值', 'error');
+                    return;
+                }
+
                 processButton.disabled = true;
                 processButton.textContent = '处理中...';
 
@@ -700,18 +817,49 @@
 
                 showStatus(`成功解析 ${jsonObjects.length} 行数据，正在处理...`, 'info');
 
+                // 检测是否有过滤功能
+                const hasFilterFunction = selectedFunctions.includes('rowSizeFilter') ||
+                                          selectedFunctions.includes('promptLengthFilter');
+
                 // 准备处理选项
                 const options = {
                     currentDate: selectedFunctions.includes('dateInsert') ? formatDate(dateInput.value) : null,
                     truncateLength: selectedFunctions.includes('promptTruncate') ? parseInt(truncateLengthInput.value) : null,
                     splitCount: selectedFunctions.includes('fileSplit') ? parseInt(splitCountInput.value) : null,
+                    maxRowSize: selectedFunctions.includes('rowSizeFilter') ? parseFloat(document.getElementById('maxRowSizeInput').value) : null,
+                    maxPromptLength: selectedFunctions.includes('promptLengthFilter') ? 20480 : null,
                     splitEnabled: selectedFunctions.includes('fileSplit'),
+                    isFilterResult: false,
                     file: file
                 };
 
                 // 应用选中的功能
                 let processedObjects = [...jsonObjects];
+                let filterResult = { retained: [], filtered: [] };
 
+                // 先执行过滤功能（如果有）
+                if (hasFilterFunction) {
+                    filterResult = { retained: processedObjects, filtered: [] };
+
+                    if (selectedFunctions.includes('rowSizeFilter')) {
+                        showStatus('正在按数据行大小过滤...', 'info');
+                        const result = functionModules.rowSizeFilter(filterResult.retained, options);
+                        filterResult.retained = result.retained;
+                        filterResult.filtered = [...filterResult.filtered, ...result.filtered];
+                    }
+
+                    if (selectedFunctions.includes('promptLengthFilter')) {
+                        showStatus('正在按 prompt 长度过滤...', 'info');
+                        const result = functionModules.promptLengthFilter(filterResult.retained, options);
+                        filterResult.retained = result.retained;
+                        filterResult.filtered = [...filterResult.filtered, ...result.filtered];
+                    }
+
+                    // 对过滤后的保留数据继续处理
+                    processedObjects = filterResult.retained;
+                }
+
+                // 执行其他功能（日期插入、Reference 字段添加、Prompt 截断）
                 if (selectedFunctions.includes('dateInsert')) {
                     showStatus('正在插入日期...', 'info');
                     processedObjects = processedObjects.map(obj => functionModules.dateInsert(obj, options));
@@ -740,15 +888,40 @@
 
                 // 批量下载
                 if (selectedFunctions.includes('batchDownload')) {
-                    functionModules.batchDownload(chunks, options);
+                    // 如果有过滤功能，输出双文件模式
+                    if (hasFilterFunction) {
+                        options.isFilterResult = true;
+                        // 更新 filterResult 的 retained 为处理后的数据
+                        filterResult.retained = processedObjects;
+                        functionModules.batchDownload(filterResult, options);
 
-                    setTimeout(() => {
-                        showStatus(`处理完成！成功生成并下载了 ${chunks.length} 个文件。`, 'success');
-                        generateFileInfo(file, jsonObjects.length, selectedFunctions, chunks.length, options);
-                    }, chunks.length * 100 + 500);
+                        setTimeout(() => {
+                            showStatus(
+                                `处理完成！保留 ${filterResult.retained.length} 行，过滤 ${filterResult.filtered.length} 行。`,
+                                'success'
+                            );
+                            generateFilterFileInfo(file, jsonObjects.length, selectedFunctions, filterResult);
+                        }, 300);
+                    } else {
+                        functionModules.batchDownload(chunks, options);
+
+                        setTimeout(() => {
+                            showStatus(`处理完成！成功生成并下载了 ${chunks.length} 个文件。`, 'success');
+                            generateFileInfo(file, jsonObjects.length, selectedFunctions, chunks.length, options);
+                        }, chunks.length * 100 + 500);
+                    }
                 } else {
-                    showStatus('处理完成！未启用下载功能。', 'success');
-                    generateFileInfo(file, jsonObjects.length, selectedFunctions, chunks.length, options);
+                    if (hasFilterFunction) {
+                        showStatus(
+                            `处理完成！保留 ${filterResult.retained.length} 行，过滤 ${filterResult.filtered.length} 行。未启用下载功能。`,
+                            'success'
+                        );
+                        filterResult.retained = processedObjects;
+                        generateFilterFileInfo(file, jsonObjects.length, selectedFunctions, filterResult);
+                    } else {
+                        showStatus('处理完成！未启用下载功能。', 'success');
+                        generateFileInfo(file, jsonObjects.length, selectedFunctions, chunks.length, options);
+                    }
                 }
 
             } catch (error) {
@@ -779,6 +952,31 @@
                     • 原始文件：${file.name}<br>
                     • 总行数：${totalLines}<br>
                     • 生成文件：${totalFiles} 个<br>
+                    • 启用功能：<br>${functionDescriptions}
+                </div>
+            `;
+            statusArea.innerHTML += fileInfo;
+        }
+
+        // 生成过滤功能的处理信息
+        function generateFilterFileInfo(file, totalLines, selectedFunctions, filterResult) {
+            const functionDescriptions = selectedFunctions.map(func => {
+                const config = functionConfig[func];
+                let desc = `• ${config.name}: ${config.description}`;
+
+                if (func === 'rowSizeFilter') desc += ` (阈值: ${document.getElementById('maxRowSizeInput').value} MB)`;
+                if (func === 'promptLengthFilter') desc += ` (限制: 20480 字节)`;
+
+                return desc;
+            }).join('<br>');
+
+            const fileInfo = `
+                <div class="file-info">
+                    <strong>处理摘要：</strong><br>
+                    • 原始文件：${file.name}<br>
+                    • 总行数：${totalLines}<br>
+                    • 保留行数：${filterResult.retained.length} 行<br>
+                    • 过滤行数：${filterResult.filtered.length} 行<br>
                     • 启用功能：<br>${functionDescriptions}
                 </div>
             `;
