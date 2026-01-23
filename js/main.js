@@ -14,6 +14,7 @@ import {
 } from './ui/functionSelector.js';
 import { generateFileInfo, generateFilterFileInfo } from './ui/fileInfoGenerator.js';
 import { processFile, executeDownload } from './core/processor.js';
+import { initFieldEditor, getFieldConfigManager, resetFields, showAddFieldDialog } from './ui/fieldEditor.js';
 
 // 获取 DOM 元素
 const fileInput = document.getElementById('fileInput');
@@ -35,8 +36,11 @@ async function handleProcessButtonClick() {
         }
 
         const selectedFunctions = getSelectedFunctions();
-        if (selectedFunctions.length === 0) {
-            showStatus('请至少选择一个功能', 'error');
+        const fieldConfigManager = getFieldConfigManager();
+        const hasFieldConfig = fieldConfigManager && fieldConfigManager.hasChanges();
+
+        if (selectedFunctions.length === 0 && !hasFieldConfig) {
+            showStatus('请至少选择一个功能或调整字段配置', 'error');
             return;
         }
 
@@ -49,7 +53,8 @@ async function handleProcessButtonClick() {
             splitCount: selectedFunctions.includes('fileSplit') ?
                 parseInt(splitCountInput.value) : null,
             maxRowSize: selectedFunctions.includes('rowSizeFilter') ?
-                parseFloat(document.getElementById('maxRowSizeInput').value) : null
+                parseFloat(document.getElementById('maxRowSizeInput').value) : null,
+            fieldConfig: fieldConfigManager ? fieldConfigManager.getConfig() : null
         };
 
         processButton.disabled = true;
@@ -130,15 +135,71 @@ export function initApp() {
     processButton.addEventListener('click', handleProcessButtonClick);
 
     // 绑定文件选择事件
-    fileInput.addEventListener('change', (e) => {
+    fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
             showStatus(`已选择文件: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`, 'info');
+
+            // 初始化字段编辑器
+            try {
+                showStatus('正在读取字段信息...', 'info');
+                await initFieldEditor(file);
+                showStatus('字段信息已加载，您可以调整字段配置', 'success');
+            } catch (error) {
+                showStatus(`读取字段失败: ${error.message}`, 'error');
+            }
         }
     });
 
+    // 绑定字段编辑器按钮事件
+    const addFieldBtn = document.getElementById('addFieldBtn');
+    const resetFieldsBtn = document.getElementById('resetFieldsBtn');
+
+    if (addFieldBtn) {
+        addFieldBtn.addEventListener('click', showAddFieldDialog);
+    }
+
+    if (resetFieldsBtn) {
+        resetFieldsBtn.addEventListener('click', resetFields);
+    }
+
     // 显示初始状态
     showStatus('请选择JSONL文件，选择需要的功能，然后点击"处理并下载"按钮。', 'info');
+
+    // 初始化主题
+    initTheme();
+}
+
+/**
+ * 初始化主题功能
+ */
+function initTheme() {
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+
+    // 从 localStorage 加载主题偏好，默认深色主题
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        html.classList.add('light-theme');
+    }
+
+    // 绑定主题切换事件
+    themeToggle.addEventListener('click', () => {
+        // 添加旋转动画类
+        themeToggle.classList.add('rotating');
+
+        // 切换主题
+        const isLight = html.classList.toggle('light-theme');
+        const themeName = isLight ? 'light' : 'dark';
+
+        // 保存到 localStorage
+        localStorage.setItem('theme', themeName);
+
+        // 移除旋转动画类
+        setTimeout(() => {
+            themeToggle.classList.remove('rotating');
+        }, 500);
+    });
 }
 
 // DOM 加载完成后初始化应用

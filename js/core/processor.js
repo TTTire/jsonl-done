@@ -59,12 +59,19 @@ export async function processFile(file, selectedFunctions, options) {
         maxPromptLength: selectedFunctions.includes('promptLengthFilter') ? 20480 : null,
         splitEnabled: selectedFunctions.includes('fileSplit'),
         isFilterResult: false,
-        file: file
+        file: file,
+        fieldConfig: options.fieldConfig || null
     };
 
-    // 应用选中的功能
+    // 首先声明 processedObjects
     let processedObjects = [...jsonObjects];
     let filterResult = { retained: [], filtered: [] };
+
+    // 应用字段重排和重命名（首先执行）
+    if (processOptions.fieldConfig) {
+        showStatus('正在应用字段配置...', 'info');
+        processedObjects = processedObjects.map(obj => processors.fieldReorder.process(obj, processOptions));
+    }
 
     // 先执行过滤功能（如果有）
     if (hasFilterFunction) {

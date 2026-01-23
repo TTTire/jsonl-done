@@ -9,6 +9,7 @@ import promptTruncateProcessor from './processors/promptTruncateProcessor.js';
 import referenceFieldProcessor from './processors/referenceFieldProcessor.js';
 import rowSizeFilterProcessor from './processors/rowSizeFilterProcessor.js';
 import promptLengthFilterProcessor from './processors/promptLengthFilterProcessor.js';
+import fieldReorderProcessor from './processors/fieldReorderProcessor.js';
 
 // 导入文件操作模块
 import fileSplitModule from './fileOperations/fileSplitModule.js';
@@ -18,6 +19,7 @@ import batchDownloadModule from './fileOperations/batchDownloadModule.js';
  * 所有处理器模块的注册表
  */
 export const processors = {
+    fieldReorder: fieldReorderProcessor,
     dateInsert: dateInsertProcessor,
     promptTruncate: promptTruncateProcessor,
     referenceField: referenceFieldProcessor,

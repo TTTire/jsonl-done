@@ -16,7 +16,48 @@
     --border: rgba(255, 255, 255, 0.08);
     --border-hover: rgba(0, 212, 170, 0.3);
     --shadow-glow: 0 0 40px rgba(0, 212, 170, 0.15);
+    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 白色主题 - 清新工作室模式 */
+:root.light-theme {
+    /* 背景色 - 温暖白色 */
+    --bg-primary: #fafafa;
+    --bg-secondary: #ffffff;
+    --bg-card: rgba(255, 255, 255, 0.95);
+    --bg-card-hover: rgba(248, 250, 252, 0.98);
+
+    /* 强调色 - 深青色保持一致 */
+    --accent: #00d4aa;
+    --accent-dim: rgba(0, 212, 170, 0.08);
+
+    /* 文字色 - 深色系 */
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+
+    /* 边框色 - 柔和灰色 */
+    --border: rgba(0, 0, 0, 0.06);
+    --border-hover: rgba(0, 212, 170, 0.25);
+
+    /* 阴影 - 柔和投影 */
+    --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* 主题过渡动画 */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.section,
+.section,
+.field-card,
+.button,
+input,
+textarea {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 * {
@@ -407,22 +448,616 @@ input[type="number"]::-webkit-outer-spin-button {
     font-weight: 500;
 }
 
-/* 响应式 */
+/* ========== 字段编辑器样式 ========== */
+
+/* 字段编辑区域 */
+.field-editor-section {
+    position: relative;
+}
+
+.field-editor-section .section-title {
+    position: relative;
+}
+
+/* 新增字段按钮 */
+.icon-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--accent);
+    border-radius: 6px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+}
+
+/* 字段统计 */
+.field-stats {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.field-stats span {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* 字段列表 */
+.field-list {
+    min-height: 60px;
+}
+
+/* 字段卡片 */
+.field-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: var(--transition);
+    cursor: grab;
+}
+
+.field-card:last-child {
+    margin-bottom: 0;
+}
+
+.field-card:active {
+    cursor: grabbing;
+}
+
+.field-card:hover {
+    border-color: var(--border-hover);
+    background: var(--bg-card-hover);
+}
+
+/* 拖拽中的卡片 */
+.field-card.dragging {
+    opacity: 0.5;
+    transform: scale(1.02) rotate(1deg);
+    box-shadow: 0 8px 32px rgba(0, 212, 170, 0.3);
+    border-color: var(--accent);
+}
+
+/* 拖拽经过的目标 */
+.field-card.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    transform: translateY(2px);
+}
+
+/* 已删除的卡片 */
+.field-card.field-deleted {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* 字段卡片头部 */
+.field-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 拖拽手柄 */
+.drag-handle {
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: grab;
+    padding: 4px;
+    user-select: none;
+    line-height: 1;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* 字段名输入框 */
+.field-name-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.field-name-input:hover {
+    border-color: var(--border);
+}
+
+.field-name-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg-primary);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.field-name-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 字段类型标签 */
+.field-type-badge {
+    font-size: 10px;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+/* 嵌套字段深度指示器 */
+.field-depth-indicator {
+    color: var(--accent);
+    font-size: 14px;
+    margin-right: 4px;
+    user-select: none;
+}
+
+/* 删除按钮 */
+.field-delete-btn {
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+}
+
+.field-delete-btn:hover {
+    background: rgba(255, 80, 80, 0.1);
+    border-color: rgba(255, 80, 80, 0.5);
+    color: #ff5050;
+}
+
+/* 字段预览区 */
+.field-card-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+.field-preview-label {
+    color: var(--text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.field-preview-value {
+    color: var(--accent);
+    font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 新增字段标签 */
+.field-new-badge {
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* 字段操作按钮 */
+.field-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* 次要按钮 */
+.secondary-btn {
+    padding: 10px 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.secondary-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+    background: var(--bg-card-hover);
+}
+
+/* ========== 确认对话框样式 ========== */
+
+.confirm-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.confirm-dialog {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    min-width: 320px;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.confirm-dialog-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+.confirm-dialog-content {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.confirm-dialog-content strong {
+    color: var(--text-primary);
+}
+
+.dialog-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.dialog-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* 字段选择器 */
+#sourceFieldSelect {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+#sourceFieldSelect:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* 单选按钮样式 */
+.radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    user-select: none;
+}
+
+.radio-label input[type="radio"] {
+    margin: 0;
+    margin-right: 8px;
+    cursor: pointer;
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+}
+
+.radio-label span {
+    display: inline-block;
+    line-height: 1;
+}
+
+.confirm-dialog-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.confirm-dialog-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.confirm-dialog-btn.cancel-btn {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.confirm-dialog-btn.cancel-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.confirm-dialog-btn.confirm-btn {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.confirm-dialog-btn.confirm-btn:hover {
+    background: #00e5ba;
+    box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
+}
+
+/* ========== 新增字段对话框 - 复制值按钮 ========== */
+
+.copy-value-btn {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.copy-value-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* 字段值下拉菜单 */
+.field-value-dropdown {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 4px;
+    min-width: 250px;
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow-card);
+    z-index: 1000;
+}
+
+.field-value-dropdown-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: var(--transition);
+}
+
+.field-value-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.field-value-dropdown-item:hover {
+    background: var(--bg-secondary);
+}
+
+.field-dropdown-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.field-dropdown-value {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 响应式 - 字段编辑器 */
 @media (max-width: 600px) {
-    body {
-        padding: 20px 16px;
+    .field-card {
+        padding: 12px;
     }
 
-    h1 {
-        font-size: 24px;
-        margin-bottom: 24px;
+    .field-card-header {
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
-    .section {
-        padding: 20px;
+    .field-name-input {
+        flex-basis: calc(100% - 70px);
     }
 
-    .checkbox-item {
-        padding: 14px;
+    .field-card-preview {
+        font-size: 11px;
     }
+
+    .confirm-dialog {
+        min-width: calc(100vw - 40px);
+        margin: 20px;
+    }
+}
+
+/* ========== 主题切换按钮 ========== */
+
+.theme-toggle {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: var(--transition);
+    box-shadow: var(--shadow-card);
+}
+
+.theme-toggle:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-glow);
+    transform: scale(1.05);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+.theme-icon {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* 图标切换动画 */
+.theme-toggle.rotating .theme-icon-sun {
+    transform: rotate(180deg);
+}
+
+.theme-toggle.rotating .theme-icon-moon {
+    transform: rotate(180deg);
+}
+
+/* 显示/隐藏对应的图标 */
+body:not(.light-theme) .theme-icon-sun {
+    display: none;
+}
+
+body:not(.light-theme) .theme-icon-moon {
+    display: block;
+}
+
+body.light-theme .theme-icon-sun {
+    display: block;
+}
+
+body.light-theme .theme-icon-moon {
+    display: none;
+}
+
+/* 主题切换时的旋转效果 */
+.theme-icon-sun {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+.theme-icon-moon {
+    opacity: 0;
+    transform: rotate(-180deg);
+    position: absolute;
+}
+
+body.light-theme .theme-icon-sun {
+    opacity: 0;
+    transform: rotate(180deg);
+}
+
+body.light-theme .theme-icon-moon {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+/* ========== 主题切换按钮图标 ========== */
+
+.theme-icon {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.theme-icon-bulb {
+    width: 20px;
+    height: 20px;
+    color: var(--accent);
+    opacity: 0.8;
 }
