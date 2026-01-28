@@ -22,6 +22,8 @@ const dateInput = document.getElementById('dateInput');
 const truncateLengthInput = document.getElementById('truncateLengthInput');
 const splitCountInput = document.getElementById('splitCountInput');
 const processButton = document.getElementById('processButton');
+const fieldEditorToggle = document.getElementById('fieldEditorToggle');
+const fieldEditorSection = document.getElementById('fieldEditorSection');
 
 /**
  * 主处理函数
@@ -140,14 +142,31 @@ export function initApp() {
         if (file) {
             showStatus(`已选择文件: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`, 'info');
 
-            // 初始化字段编辑器
-            try {
-                showStatus('正在读取字段信息...', 'info');
-                await initFieldEditor(file);
-                showStatus('字段信息已加载，您可以调整字段配置', 'success');
-            } catch (error) {
-                showStatus(`读取字段失败: ${error.message}`, 'error');
+            // 检查字段编辑器复选框
+            if (fieldEditorToggle.checked) {
+                // 初始化字段编辑器
+                try {
+                    showStatus('正在读取字段信息...', 'info');
+                    await initFieldEditor(file);
+                    showStatus('字段信息已加载，您可以调整字段配置', 'success');
+                } catch (error) {
+                    showStatus(`读取字段失败: ${error.message}`, 'error');
+                }
             }
+        }
+    });
+
+    // 绑定字段编辑器复选框事件
+    fieldEditorToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            // 启用字段编辑器
+            const file = fileInput.files[0];
+            if (file) {
+                fieldEditorSection.style.display = 'block';
+            }
+        } else {
+            // 禁用字段编辑器
+            fieldEditorSection.style.display = 'none';
         }
     });
 
