@@ -26,6 +26,60 @@ const fieldEditorToggle = document.getElementById('fieldEditorToggle');
 const fieldEditorSection = document.getElementById('fieldEditorSection');
 
 /**
+ * 应用状态管理
+ */
+const AppState = {
+    current: 'initial',
+
+    /**
+     * 切换应用状态
+     * @param {string} newState - 新状态: 'initial' | 'file-selected' | 'field-editor-active'
+     */
+    setState(newState) {
+        const wrapper = document.getElementById('appWrapper');
+        const functionSection = document.getElementById('functionSection');
+        const fieldEditorSection = document.getElementById('fieldEditorSection');
+        const processButton = document.getElementById('processButton');
+
+        // 移除所有状态类
+        wrapper.classList.remove('state-initial', 'state-file-selected');
+
+        switch(newState) {
+            case 'initial':
+                wrapper.classList.add('state-initial');
+                functionSection.style.display = 'none';
+                fieldEditorSection.style.display = 'none';
+                processButton.style.display = 'none';
+                break;
+
+            case 'file-selected':
+                wrapper.classList.add('state-file-selected');
+                functionSection.style.display = 'block';
+                fieldEditorSection.style.display = 'none';
+                processButton.style.display = 'block';
+                break;
+
+            case 'field-editor-active':
+                wrapper.classList.add('state-file-selected');
+                functionSection.style.display = 'block';
+                fieldEditorSection.style.display = 'block';
+                processButton.style.display = 'block';
+                break;
+        }
+
+        this.current = newState;
+    },
+
+    /**
+     * 获取当前状态
+     * @returns {string} 当前状态
+     */
+    getState() {
+        return this.current;
+    }
+};
+
+/**
  * 主处理函数
  * 处理文件并执行选中的功能
  */
@@ -67,39 +121,26 @@ async function handleProcessButtonClick() {
 
         showStatus('数据处理完成，正在准备下载...', 'info');
 
-        // 批量下载
-        if (selectedFunctions.includes('batchDownload')) {
-            // 如果有过滤功能，输出双文件模式
-            if (result.hasFilterFunction) {
-                result.processOptions.isFilterResult = true;
-                executeDownload(result.filterResult, result.processOptions);
+        // 直接执行下载（默认行为）
+        // 如果有过滤功能，输出双文件模式
+        if (result.hasFilterFunction) {
+            result.processOptions.isFilterResult = true;
+            executeDownload(result.filterResult, result.processOptions);
 
-                setTimeout(() => {
-                    showStatus(
-                        `处理完成！保留 ${result.filterResult.retained.length} 行，过滤 ${result.filterResult.filtered.length} 行。`,
-                        'success'
-                    );
-                    generateFilterFileInfo(file, result.processedObjects.length, selectedFunctions, result.filterResult);
-                }, 300);
-            } else {
-                executeDownload(result.chunks, result.processOptions);
-
-                setTimeout(() => {
-                    showStatus(`处理完成！成功生成并下载了 ${result.chunks.length} 个文件。`, 'success');
-                    generateFileInfo(file, result.processedObjects.length, selectedFunctions, result.chunks.length, result.processOptions);
-                }, result.chunks.length * 100 + 500);
-            }
-        } else {
-            if (result.hasFilterFunction) {
+            setTimeout(() => {
                 showStatus(
-                    `处理完成！保留 ${result.filterResult.retained.length} 行，过滤 ${result.filterResult.filtered.length} 行。未启用下载功能。`,
+                    `处理完成！保留 ${result.filterResult.retained.length} 行，过滤 ${result.filterResult.filtered.length} 行。`,
                     'success'
                 );
                 generateFilterFileInfo(file, result.processedObjects.length, selectedFunctions, result.filterResult);
-            } else {
-                showStatus('处理完成！未启用下载功能。', 'success');
+            }, 300);
+        } else {
+            executeDownload(result.chunks, result.processOptions);
+
+            setTimeout(() => {
+                showStatus(`处理完成！成功生成并下载了 ${result.chunks.length} 个文件。`, 'success');
                 generateFileInfo(file, result.processedObjects.length, selectedFunctions, result.chunks.length, result.processOptions);
-            }
+            }, result.chunks.length * 100 + 500);
         }
 
     } catch (error) {
@@ -117,6 +158,9 @@ async function handleProcessButtonClick() {
 export function initApp() {
     // 设置默认日期
     dateInput.value = getTodayDate();
+
+    // 设置初始状态
+    AppState.setState('initial');
 
     // 初始化复选框状态
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(checkbox => {
@@ -142,31 +186,56 @@ export function initApp() {
         if (file) {
             showStatus(`已选择文件: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`, 'info');
 
+            // 切换到文件已选择状态
+            AppState.setState('file-selected');
+
             // 检查字段编辑器复选框
             if (fieldEditorToggle.checked) {
                 // 初始化字段编辑器
                 try {
                     showStatus('正在读取字段信息...', 'info');
                     await initFieldEditor(file);
+                    // 切换到字段编辑器激活状态
+                    AppState.setState('field-editor-active');
                     showStatus('字段信息已加载，您可以调整字段配置', 'success');
                 } catch (error) {
                     showStatus(`读取字段失败: ${error.message}`, 'error');
                 }
             }
+        } else {
+            // 文件被清除，返回初始状态
+            AppState.setState('initial');
         }
     });
 
     // 绑定字段编辑器复选框事件
-    fieldEditorToggle.addEventListener('change', (e) => {
+    fieldEditorToggle.addEventListener('change', async (e) => {
         if (e.target.checked) {
             // 启用字段编辑器
             const file = fileInput.files[0];
             if (file) {
-                fieldEditorSection.style.display = 'block';
+                try {
+                    showStatus('正在读取字段信息...', 'info');
+                    await initFieldEditor(file);
+                    // 切换到字段编辑器激活状态
+                    AppState.setState('field-editor-active');
+                    showStatus('字段信息已加载，您可以调整字段配置', 'success');
+                } catch (error) {
+                    showStatus(`读取字段失败: ${error.message}`, 'error');
+                }
+            } else {
+                showStatus('请先选择文件', 'error');
+                e.target.checked = false;
             }
         } else {
             // 禁用字段编辑器
             fieldEditorSection.style.display = 'none';
+            // 返回文件已选择状态
+            if (fileInput.files[0]) {
+                AppState.setState('file-selected');
+            } else {
+                AppState.setState('initial');
+            }
         }
     });
 

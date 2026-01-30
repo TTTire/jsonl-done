@@ -38,5 +38,10 @@ export const functionConfig = {
         name: 'Prompt 长度过滤',
         description: '按 prompt 长度过滤（固定 20480 字节）',
         dependencies: []
+    },
+    fieldEditor: {
+        name: '字段编辑',
+        description: '启用字段编辑功能',
+        dependencies: []
     }
 };

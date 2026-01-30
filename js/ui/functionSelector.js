@@ -44,7 +44,7 @@ export function updateSelectedFunctionsDisplay() {
 }
 
 /**
- * 显示/隐藏依赖设置
+ * 显示/隐藏依赖设置（带平滑动画）
  * @param {string} functionName - 功能名称
  * @param {boolean} show - 是否显示
  */
@@ -54,8 +54,55 @@ export function toggleDependencySettings(functionName, show) {
 
     config.dependencies.forEach(depId => {
         const element = document.getElementById(`${functionName}Settings`);
-        if (element) {
-            element.style.display = show ? 'block' : 'none';
+        if (!element) return;
+
+        // 移除旧的事件监听器
+        if (element._animationHandler) {
+            element.removeEventListener('animationend', element._animationHandler);
+            element._animationHandler = null;
+        }
+
+        // 移除所有状态类
+        element.classList.remove('showing', 'hiding', 'visible');
+
+        if (show) {
+            // 显示：先设为 block，再触发动画
+            element.style.display = 'block';
+
+            // 强制重绘以确保动画触发
+            void element.offsetWidth;
+
+            // 添加显示动画类
+            element.classList.add('showing');
+
+            // 使用 animationend 事件监听动画完成
+            element._animationHandler = () => {
+                element.classList.remove('showing');
+                element.classList.add('visible');
+                element.removeEventListener('animationend', element._animationHandler);
+                element._animationHandler = null;
+            };
+            element.addEventListener('animationend', element._animationHandler);
+        } else {
+            // 隐藏：检查是否可见
+            const isVisible = element.classList.contains('visible') ||
+                            (!element.classList.contains('hiding') && element.style.display !== 'none');
+
+            if (isVisible) {
+                element.classList.add('hiding');
+
+                // 使用 animationend 事件监听动画完成
+                element._animationHandler = () => {
+                    element.classList.remove('hiding');
+                    element.style.display = 'none';
+                    element.removeEventListener('animationend', element._animationHandler);
+                    element._animationHandler = null;
+                };
+                element.addEventListener('animationend', element._animationHandler);
+            } else {
+                // 已经隐藏，直接设置
+                element.style.display = 'none';
+            }
         }
     });
 }
@@ -75,40 +122,23 @@ export function updateCheckboxStyle(checkbox) {
 
 /**
  * 处理功能依赖关系
- * 控制批量下载功能的启用/禁用状态
+ * 批量下载功能已移除，下载现在是默认行为
+ * 此函数保留用于未来可能的其他功能依赖关系
  */
 export function handleFunctionDependencies() {
-    const rowSizeFilterEnabled = document.getElementById('rowSizeFilter').checked;
-    const promptLengthFilterEnabled = document.getElementById('promptLengthFilter').checked;
-    const fileSplitEnabled = document.getElementById('fileSplit').checked;
-    const batchDownloadCheckbox = document.getElementById('batchDownload');
-
-    // 检测是否启用了过滤功能
-    const hasFilterFunction = rowSizeFilterEnabled || promptLengthFilterEnabled;
-
-    // 如果文件切分启用，批量下载自动启用且不可取消
-    if (fileSplitEnabled) {
-        batchDownloadCheckbox.checked = true;
-        batchDownloadCheckbox.disabled = true;
-        batchDownloadCheckbox.closest('.checkbox-item').style.opacity = '0.6';
-        batchDownloadCheckbox.closest('.checkbox-item').style.cursor = 'not-allowed';
-    } else if (hasFilterFunction) {
-        // 过滤功能启用时，批量下载自动启用且不可取消
-        batchDownloadCheckbox.checked = true;
-        batchDownloadCheckbox.disabled = true;
-        batchDownloadCheckbox.closest('.checkbox-item').style.opacity = '0.6';
-        batchDownloadCheckbox.closest('.checkbox-item').style.cursor = 'not-allowed';
-    } else {
-        batchDownloadCheckbox.disabled = false;
-        batchDownloadCheckbox.closest('.checkbox-item').style.opacity = '1';
-        batchDownloadCheckbox.closest('.checkbox-item').style.cursor = 'pointer';
-    }
+    // 下载现在是默认行为，无需额外处理
+    // 此函数保留用于未来可能的其他功能依赖关系
 }
 
 /**
  * 初始化功能选择器
  */
 export function initFunctionSelector() {
+    // 初始化：将所有依赖设置面板设为隐藏
+    document.querySelectorAll('.checkbox-dependency').forEach(el => {
+        el.style.display = 'none';
+    });
+
     // 为所有复选框添加事件监听器
     document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(checkbox => {
         checkbox.addEventListener('change', (e) => {

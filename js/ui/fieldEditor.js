@@ -66,6 +66,28 @@ export async function initFieldEditor(file) {
         return fieldConfigManager;
     } catch (error) {
         console.error('初始化字段编辑器失败:', error);
+
+        // 显示详细错误（不自动消失）
+        const statusArea = document.getElementById('statusArea');
+        statusArea.className = 'status-error';
+        statusArea.textContent = `❌ ${error.message}`;
+        statusArea.style.fontSize = '13px';
+        statusArea.style.whiteSpace = 'pre-line';
+
+        // 在字段编辑区域显示持久错误提示
+        const fieldList = document.getElementById('fieldList');
+        fieldList.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
+                <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
+                <div style="font-weight: 500; margin-bottom: 8px;">字段读取失败</div>
+                <div style="font-size: 12px;">${error.message.replace(/\n/g, '<br>')}</div>
+                <div style="font-size: 11px; margin-top: 12px; color: var(--text-muted);">
+                    提示: 请确保文件格式正确，前几行包含有效的 JSON 数据
+                </div>
+            </div>
+        `;
+        fieldList.style.display = 'block';
+
         throw error;
     }
 }
@@ -134,7 +156,7 @@ function createFieldCard(fieldInfo, isNewField = false) {
             <input type="text" class="field-name-input" value="${escapeHtml(displayName)}"
                    data-original-name="${fieldInfo.originalName}" placeholder="字段名"
                    title="完整路径: ${escapeHtml(fullPathDisplay)}" />
-            <span class="field-type-badge">${typeLabel}</span>
+            <span class="field-type-badge type-${fieldInfo.type}">${typeLabel}</span>
             <button class="field-delete-btn" title="删除字段" data-field-name="${fieldInfo.originalName}">×</button>
         </div>
         <div class="field-card-preview" ${indentStyle}>
@@ -143,6 +165,20 @@ function createFieldCard(fieldInfo, isNewField = false) {
             ${isNewField ? '<span class="field-new-badge">新增</span>' : ''}
         </div>
     `;
+
+    // 为所有数组类型添加悬停提示
+    console.log('检查字段类型:', fieldInfo.type, '字段名:', fieldInfo.originalName);
+    if (fieldInfo.type === 'array') {
+        console.log('✅ 为数组字段添加事件监听器:', fieldInfo.originalName);
+        card.addEventListener('mouseenter', (e) => {
+            console.log('🔥 mouseenter 触发:', fieldInfo.originalName);
+            showArrayTooltip(e, fieldInfo);
+        });
+        card.addEventListener('mouseleave', () => {
+            console.log('🔥 mouseleave 触发');
+            hideArrayTooltip();
+        });
+    }
 
     return card;
 }
@@ -681,6 +717,166 @@ function closeFieldDropdown() {
     const existing = document.querySelector('.field-value-dropdown');
     if (existing) {
         existing.remove();
+    }
+}
+
+/**
+ * ========== 数组悬停提示功能 ==========
+ */
+
+let arrayTooltip = null;
+let tooltipTimer = null;
+
+/**
+ * 显示数组悬停提示
+ * @param {Event} event - 鼠标事件
+ * @param {FieldInfo} fieldInfo - 字段信息
+ */
+function showArrayTooltip(event, fieldInfo) {
+    console.log('showArrayTooltip 被调用, fieldInfo:', fieldInfo);
+    // 清除之前的定时器
+    if (tooltipTimer) {
+        clearTimeout(tooltipTimer);
+    }
+
+    // 保存当前元素的引用，避免 setTimeout 后 event.currentTarget 变成 null
+    const targetElement = event.currentTarget;
+
+    // 延迟显示，避免快速划过时频繁触发
+    tooltipTimer = setTimeout(() => {
+        console.log('300ms 延迟后，准备创建 tooltip');
+        createTooltip(targetElement, fieldInfo);
+    }, 300);
+}
+
+/**
+ * 创建并显示 tooltip
+ * @param {HTMLElement} targetElement - 目标元素
+ * @param {FieldInfo} fieldInfo - 字段信息
+ */
+function createTooltip(targetElement, fieldInfo) {
+    console.log('createTooltip 被调用, targetElement:', targetElement, 'fieldInfo:', fieldInfo);
+    // 移除已存在的 tooltip
+    hideArrayTooltip();
+
+    const { arrayInfo, originalName, displayName } = fieldInfo;
+    console.log('arrayInfo:', arrayInfo);
+
+    // 检查是否有有效的数组结构信息
+    const hasArrayInfo = arrayInfo && arrayInfo.itemStructure && arrayInfo.itemStructure.length > 0;
+    const itemLength = arrayInfo?.length || 0;
+
+    // 创建 tooltip 元素
+    const tooltip = document.createElement('div');
+    tooltip.className = 'field-array-tooltip';
+
+    // 构建 itemStructure HTML
+    let itemStructureHtml = '';
+    if (hasArrayInfo) {
+        itemStructureHtml = arrayInfo.itemStructure.map(item => {
+            const typeLabel = getTypeLabel(item.type);
+            return `
+                <div class="tooltip-item">
+                    <span class="bullet">•</span>
+                    <span class="item-name">${escapeHtml(item.name)}</span>
+                    <span class="item-type">${typeLabel}</span>
+                </div>
+            `;
+        }).join('');
+    } else {
+        // 没有结构信息的情况（空数组或简单类型数组）
+        itemStructureHtml = `
+            <div class="tooltip-item">
+                <span class="bullet">•</span>
+                <span class="item-name">(空数组或简单类型数组)</span>
+            </div>
+        `;
+    }
+
+    tooltip.innerHTML = `
+        <div class="tooltip-title">${escapeHtml(displayName || originalName)} (数组)</div>
+        <div class="tooltip-content">
+            <div class="tooltip-row">
+                <span class="tooltip-label">📊 长度:</span>
+                <span class="tooltip-value">${itemLength} 项</span>
+            </div>
+            <div class="tooltip-row" style="margin-top: 12px;">
+                <span class="tooltip-label">📦 数组项结构:</span>
+            </div>
+            ${itemStructureHtml}
+        </div>
+    `;
+
+    // 先添加到 DOM，这样才能获取正确的尺寸
+    document.body.appendChild(tooltip);
+    console.log('✅ tooltip 已添加到 DOM, 元素:', tooltip);
+
+    // 获取位置信息
+    const cardRect = targetElement.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    console.log('📍 cardRect:', cardRect, 'tooltipRect:', tooltipRect);
+    console.log('🖥️ window尺寸:', window.innerWidth, 'x', window.innerHeight);
+
+    // 显示在字段右侧
+    let top = cardRect.top;
+    let left = cardRect.right + 8;
+    console.log('📍 初始位置:', { top, left });
+
+    // 获取侧边栏宽度（320px）
+    const sidebarWidth = 320;
+
+    // 计算可用空间（考虑侧边栏）
+    const availableRightSpace = window.innerWidth - left;
+    const availableLeftSpace = cardRect.left - sidebarWidth;
+
+    // 优先显示在右侧，如果右侧空间不足且左侧空间充足，才显示在左侧
+    if (availableRightSpace < tooltipRect.width && availableLeftSpace > tooltipRect.width) {
+        left = cardRect.left - tooltipRect.width - 8;
+        console.log('⬅️ 右侧空间不足，切换到左侧');
+    }
+
+    // 如果右侧和左侧都不足，确保tooltip至少不会被侧边栏遮挡
+    if (left < sidebarWidth + 16) {
+        left = sidebarWidth + 16;
+        console.log('➡️ 调整位置以避开侧边栏');
+    }
+
+    // 如果下方空间不足，向上调整
+    if (top + tooltipRect.height > window.innerHeight - 16) {
+        top = window.innerHeight - tooltipRect.height - 16;
+        console.log('⬆️ 下方空间不足，向上调整');
+    }
+    if (top < 16) {
+        top = 16;
+        console.log('⬆️ 调整到最小 top 值');
+    }
+
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+    console.log('📍 最终位置:', { top, left });
+    console.log('🎨 tooltip 最终样式:', {
+        top: tooltip.style.top,
+        left: tooltip.style.left,
+        display: tooltip.style.display,
+        visibility: tooltip.style.visibility,
+        opacity: tooltip.style.opacity,
+        zIndex: tooltip.style.zIndex
+    });
+
+    arrayTooltip = tooltip;
+}
+
+/**
+ * 隐藏数组悬停提示
+ */
+function hideArrayTooltip() {
+    if (tooltipTimer) {
+        clearTimeout(tooltipTimer);
+        tooltipTimer = null;
+    }
+    if (arrayTooltip) {
+        arrayTooltip.remove();
+        arrayTooltip = null;
     }
 }
 
