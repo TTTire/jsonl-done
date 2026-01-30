@@ -140,7 +140,10 @@ export function initFunctionSelector() {
     });
 
     // 为所有复选框添加事件监听器
-    document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(checkbox => {
+    document.querySelectorAll('.checkbox-item').forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+
+        // 点击复选框本身（原有逻辑）
         checkbox.addEventListener('change', (e) => {
             const functionName = e.target.id;
             const isChecked = e.target.checked;
@@ -149,6 +152,18 @@ export function initFunctionSelector() {
             toggleDependencySettings(functionName, isChecked);
             updateSelectedFunctionsDisplay();
             handleFunctionDependencies();
+        });
+
+        // 点击整个标签项时触发复选框
+        item.addEventListener('click', (e) => {
+            // 如果点击的是复选框本身，不需要处理（已有 change 事件）
+            if (e.target === checkbox) {
+                return;
+            }
+            // 点击其他区域时，切换复选框状态
+            checkbox.checked = !checkbox.checked;
+            // 手动触发 change 事件以执行原有逻辑
+            checkbox.dispatchEvent(new Event('change'));
         });
     });
 }
